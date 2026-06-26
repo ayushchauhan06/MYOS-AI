@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -33,7 +33,7 @@ const sidebarVariants = {
   collapsed: { width: 64 },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   initial: { opacity: 0, x: -10 },
   animate: (i: number) => ({
     opacity: 1,
