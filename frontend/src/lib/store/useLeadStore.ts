@@ -9,7 +9,7 @@ import {
   updateLeadStageAction,
   updateLeadAction,
   removeLeadAction,
-} from "@/app/(dashboard)/leads/actions";
+} from "@/modules/leads/lead.actions";
 
 export type ViewMode = "kanban" | "table";
 

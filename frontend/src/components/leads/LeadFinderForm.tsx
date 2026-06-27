@@ -33,10 +33,10 @@ const businessTypes = ["B2B", "B2C", "B2B2C", "Enterprise", "SMB", "Startup"];
 const companySizes = ["1–10", "11–50", "51–200", "200+"];
 
 export function LeadFinderForm({
-  onResults,
+  onSearch,
   isSearching,
 }: {
-  onResults: (leads: Lead[]) => void;
+  onSearch: (data: SearchForm) => void;
   isSearching: boolean;
 }) {
   const { register, handleSubmit, formState: { errors } } = useForm<SearchForm>({
@@ -44,12 +44,8 @@ export function LeadFinderForm({
     defaultValues: { industry: "", country: "", count: 10 },
   });
 
-  function onSubmit(_data: SearchForm) {
-    // Mock: return subset of mockLeads with slight delay
-    // When backend is ready, call: searchLeadsAction(data)
-    setTimeout(() => {
-      onResults(mockLeads.slice(0, 8));
-    }, 2200);
+  function onSubmit(data: SearchForm) {
+    onSearch(data);
   }
 
   return (

@@ -20,9 +20,11 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relationships
-  workspaces    WorkspaceMember[]
-  sessions      Session[]
-  accounts      Account[]
+  workspaces      WorkspaceMember[]
+  sessions        Session[]
+  accounts        Account[]
+  searchHistories SearchHistory[]
+  aiConversations AIConversation[]
 
   @@map("users")
 }
@@ -60,13 +62,15 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members      WorkspaceMember[]
-  leads        Lead[]
-  campaigns    Campaign[]
-  proposals    Proposal[]
-  templates    EmailTemplate[]
-  integrations Integration[]
-  aiSettings   AISettings?
+  members         WorkspaceMember[]
+  leads           Lead[]
+  campaigns       Campaign[]
+  proposals       Proposal[]
+  templates       EmailTemplate[]
+  integrations    Integration[]
+  settings        Settings?
+  searchHistories SearchHistory[]
+  aiConversations AIConversation[]
 
   @@map("workspaces")
 }
@@ -90,6 +94,7 @@ model WorkspaceMember {
 model Lead {
   id                String        @id @default(cuid())
   workspaceId       String
+  googlePlaceId     String?
   company           String
   website           String?
   industry          String?
@@ -126,8 +131,8 @@ model Lead {
   updatedAt         DateTime      @updatedAt
 
   workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  emails            EmailLog[]
-  whatsappLogs      WhatsAppLog[]
+  emails            Email[]
+  whatsappMessages  WhatsAppMessage[]
   proposals         Proposal[]
   activities        Activity[]
   campaignLeads     CampaignLead[]
@@ -135,6 +140,41 @@ model Lead {
   @@index([workspaceId, stage])
   @@index([workspaceId, createdAt])
   @@map("leads")
+}
+
+// ─── SEARCH HISTORY ───────────────────────────────────
+
+model SearchHistory {
+  id                String    @id @default(cuid())
+  workspaceId       String
+  userId            String
+  query             String
+  filters           Json?     // stores filter tags, industry etc
+  leadsCount        Int       @default(0)
+  apifyCreditsUsed  Float     @default(0)
+  createdAt         DateTime  @default(now())
+
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("search_histories")
+}
+
+// ─── AI CONVERSATION ──────────────────────────────────
+
+model AIConversation {
+  id          String      @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String?
+  messages    Json        // Store messages array: [{ role: 'user'|'assistant', content: string, time: string }]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_conversations")
 }
 
 // ─── PROPOSALS ────────────────────────────────────────
@@ -198,7 +238,7 @@ model Campaign {
 
   workspace     Workspace       @relation(fields: [workspaceId], references: [id])
   leads         CampaignLead[]
-  emails        EmailLog[]
+  emails        Email[]
   automationSteps AutomationStep[]
 
   @@index([workspaceId, status])
@@ -234,9 +274,9 @@ model AutomationStep {
   @@map("automation_steps")
 }
 
-// ─── EMAIL LOGS ────────────────────────────────────────
+// ─── EMAILS ───────────────────────────────────────────
 
-model EmailLog {
+model Email {
   id          String      @id @default(cuid())
   workspaceId String
   leadId      String?
@@ -262,12 +302,12 @@ model EmailLog {
 
   @@index([leadId])
   @@index([campaignId])
-  @@map("email_logs")
+  @@map("emails")
 }
 
-// ─── WHATSAPP LOGS ─────────────────────────────────────
+// ─── WHATSAPP MESSAGES ────────────────────────────────
 
-model WhatsAppLog {
+model WhatsAppMessage {
   id          String    @id @default(cuid())
   leadId      String
   to          String
@@ -286,7 +326,7 @@ model WhatsAppLog {
 
   lead        Lead      @relation(fields: [leadId], references: [id])
 
-  @@map("whatsapp_logs")
+  @@map("whatsapp_messages")
 }
 
 // ─── EMAIL TEMPLATES ────────────────────────────────────
@@ -308,12 +348,12 @@ model EmailTemplate {
   @@map("email_templates")
 }
 
-// ─── ACTIVITY LOG ──────────────────────────────────────
+// ─── ACTIVITY TIMELINE ─────────────────────────────────
 
 model Activity {
   id          String    @id @default(cuid())
   leadId      String
-  type        String    // email_sent | email_opened | whatsapp_sent | replied | stage_changed | note_added
+  type        String    // lead_saved | proposal_generated | email_sent | reply_received | meeting_booked | proposal_accepted
   description String
   metadata    Json      @default("{}")
   createdAt   DateTime  @default(now())
@@ -341,22 +381,32 @@ model Integration {
   @@map("integrations")
 }
 
-// ─── AI SETTINGS ───────────────────────────────────────
+// ─── SETTINGS ──────────────────────────────────────────
 
-model AISettings {
+model Settings {
   id                String    @id @default(cuid())
   workspaceId       String    @unique
-  provider          String    @default("openai") // openai | anthropic
-  model             String    @default("gpt-4o")
+  
+  // AI Settings
+  aiProvider        String    @default("openai") // openai | anthropic | gemini
+  aiModel           String    @default("gpt-4o")
   temperature       Float     @default(0.7)
   customApiKey      String?   // User's own key
   leadFinderPrompt  String?   @db.Text
   emailTone         String    @default("professional") // professional | casual | friendly
   proposalStyle     String    @default("detailed")
   
-  workspace         Workspace @relation(fields: [workspaceId], references: [id])
+  // General settings
+  emailFromAddress  String?
+  emailFromName     String?
+  whatsappNumber    String?
 
-  @@map("ai_settings")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
 }
 
 // ─── ENUMS ─────────────────────────────────────────────

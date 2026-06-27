@@ -142,8 +142,8 @@ export interface Campaign {
   updatedAt: string;
 }
 
-// ── Email Log ─────────────────────────────────────────────────────────────────
-export interface EmailLog {
+// ── Email ─────────────────────────────────────────────────────────────────────
+export interface Email {
   id: string;
   workspaceId: string;
   leadId?: string;

@@ -9,6 +9,17 @@ import { SkeletonLeadCard } from "@/components/ui/skeleton-card";
 import { containerVariants } from "@/lib/utils";
 import { useLeadStore } from "@/lib/store/useLeadStore";
 import type { Lead } from "@/lib/types";
+import { searchLeadsAction } from "@/modules/leads/lead.actions";
+
+interface SearchQueryInput {
+  industry: string;
+  country: string;
+  city?: string;
+  businessType?: string;
+  companySize?: string;
+  keywords?: string;
+  count: number;
+}
 
 export default function LeadFinderPage() {
   const [isSearching, setIsSearching] = useState(false);
@@ -16,16 +27,22 @@ export default function LeadFinderPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const { addLead } = useLeadStore();
 
-  function handleResults(leads: Lead[]) {
-    setIsSearching(false);
-    setResults(leads);
-    setHasSearched(true);
-  }
-
-  function handleSearch(leads: Lead[]) {
+  async function handleSearch(query: SearchQueryInput) {
     setIsSearching(true);
     setResults([]);
-    handleResults(leads);
+    setHasSearched(true);
+    try {
+      const res = await searchLeadsAction(query);
+      if (res.success && res.data) {
+        setResults(res.data as Lead[]);
+      } else {
+        console.error("Search failed:", res.error);
+      }
+    } catch (error) {
+      console.error("Failed to run lead search:", error);
+    } finally {
+      setIsSearching(false);
+    }
   }
 
   function saveAll() {
@@ -36,7 +53,7 @@ export default function LeadFinderPage() {
     <div className="flex h-full min-h-0">
       {/* Left panel — form */}
       <div className="w-[320px] flex-shrink-0 overflow-y-auto border-r border-[var(--border)] bg-white p-6 scrollbar-hide">
-        <LeadFinderForm onResults={handleSearch} isSearching={isSearching} />
+        <LeadFinderForm onSearch={handleSearch} isSearching={isSearching} />
       </div>
 
       {/* Right panel — results */}
