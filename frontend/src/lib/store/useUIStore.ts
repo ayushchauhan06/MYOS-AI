@@ -30,7 +30,24 @@ interface UIStore {
   commandPaletteOpen: boolean;
   toggleCommandPalette: () => void;
   closeCommandPalette: () => void;
+
+  // Plan and Upgrades
+  userPlan: "FREE" | "STARTER" | "PRO" | "AGENCY";
+  setUserPlan: (plan: "FREE" | "STARTER" | "PRO" | "AGENCY") => void;
+  upgradeModalOpen: boolean;
+  setUpgradeModalOpen: (open: boolean) => void;
 }
+
+// Helper to get initial plan safely on client/server
+const getInitialPlan = (): "FREE" | "STARTER" | "PRO" | "AGENCY" => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("myos_user_plan");
+    if (saved === "FREE" || saved === "STARTER" || saved === "PRO" || saved === "AGENCY") {
+      return saved;
+    }
+  }
+  return "FREE";
+};
 
 export const useUIStore = create<UIStore>((set, get) => ({
   sidebarCollapsed: false,
@@ -73,4 +90,14 @@ export const useUIStore = create<UIStore>((set, get) => ({
   toggleCommandPalette: () =>
     set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
   closeCommandPalette: () => set({ commandPaletteOpen: false }),
+
+  userPlan: getInitialPlan(),
+  setUserPlan: (userPlan) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("myos_user_plan", userPlan);
+    }
+    set({ userPlan });
+  },
+  upgradeModalOpen: false,
+  setUpgradeModalOpen: (upgradeModalOpen) => set({ upgradeModalOpen }),
 }));

@@ -44,7 +44,7 @@ const itemVariants: Variants = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { sidebarCollapsed, toggleSidebar, toggleAIAssistant } = useUIStore();
+  const { sidebarCollapsed, toggleSidebar, toggleAIAssistant, userPlan } = useUIStore();
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -168,7 +168,9 @@ export function Sidebar() {
                 className="overflow-hidden min-w-0"
               >
                 <p className="text-sm font-semibold text-[var(--text-primary)] whitespace-nowrap">Alex Chen</p>
-                <p className="text-xs text-[var(--text-muted)] whitespace-nowrap">Pro Plan</p>
+                <p className="text-xs text-[var(--text-muted)] whitespace-nowrap">
+                  {userPlan === "FREE" ? "Free Tier" : `${userPlan.charAt(0) + userPlan.slice(1).toLowerCase()} Plan`}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>

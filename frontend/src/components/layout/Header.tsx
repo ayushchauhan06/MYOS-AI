@@ -10,6 +10,7 @@ import { cn, formatRelativeTime } from "@/lib/utils";
 import { useUIStore } from "@/lib/store/useUIStore";
 import { GradientBadge } from "@/components/ui/gradient-badge";
 import type { Notification } from "@/lib/types";
+import { UpgradeModal } from "@/components/layout/UpgradeModal";
 
 // Auto breadcrumb from pathname
 function useBreadcrumb() {
@@ -151,7 +152,14 @@ function NotificationPanel() {
 
 export function Header() {
   const breadcrumb = useBreadcrumb();
-  const { notificationPanelOpen, toggleNotificationPanel, closeNotificationPanel, unreadCount } = useUIStore();
+  const { 
+    notificationPanelOpen, 
+    toggleNotificationPanel, 
+    closeNotificationPanel, 
+    unreadCount,
+    userPlan,
+    setUpgradeModalOpen
+  } = useUIStore();
 
   // Close on outside click
   useEffect(() => {
@@ -199,11 +207,21 @@ export function Header() {
             </kbd>
           </button>
 
-          {/* Upgrade pill */}
-          <button className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95">
-            <Zap className="h-3 w-3" />
-            Upgrade to Pro
-          </button>
+          {/* Upgrade pill / Plan badge */}
+          {userPlan === "FREE" ? (
+            <button
+              onClick={() => setUpgradeModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <Zap className="h-3 w-3" />
+              Upgrade to Pro
+            </button>
+          ) : (
+            <span className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/25 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 shadow-[0_0_12px_rgba(99,102,241,0.1)]">
+              <Zap className="h-3 w-3 fill-indigo-500 text-indigo-500" />
+              {userPlan.charAt(0) + userPlan.slice(1).toLowerCase()} Plan
+            </span>
+          )}
 
           {/* Notification bell */}
           <div data-notification-panel>
@@ -237,6 +255,9 @@ export function Header() {
       <AnimatePresence>
         {notificationPanelOpen && <NotificationPanel />}
       </AnimatePresence>
+
+      {/* Upgrade pricing/checkout modal */}
+      <UpgradeModal />
     </>
   );
 }
