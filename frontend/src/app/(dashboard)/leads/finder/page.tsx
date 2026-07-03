@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckSquare, BookmarkPlus, Megaphone, Radar, Sparkles } from "lucide-react";
+import { CheckSquare, BookmarkPlus, Megaphone, Sparkles, MapPin, Clock } from "lucide-react";
 import { LeadFinderForm } from "@/components/leads/LeadFinderForm";
 import { LeadCard } from "@/components/leads/LeadCard";
 import { SkeletonLeadCard } from "@/components/ui/skeleton-card";
@@ -21,24 +21,58 @@ interface SearchQueryInput {
   count: number;
 }
 
+const SEARCH_MESSAGES = [
+  "Connecting to Google Maps...",
+  "Scanning local businesses...",
+  "Extracting contact details...",
+  "Analysing ratings & reviews...",
+  "Qualifying leads with AI...",
+  "Almost there — finalising results...",
+];
+
 export default function LeadFinderPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<Lead[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [msgIndex, setMsgIndex] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { addLead } = useLeadStore();
+
+  // Timer that shows elapsed seconds + rotating messages while searching
+  useEffect(() => {
+    if (isSearching) {
+      setElapsedSeconds(0);
+      setMsgIndex(0);
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds((s) => s + 1);
+        setMsgIndex((m) => (m + 1) % SEARCH_MESSAGES.length);
+      }, 3000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isSearching]);
 
   async function handleSearch(query: SearchQueryInput) {
     setIsSearching(true);
     setResults([]);
     setHasSearched(true);
+    setSearchError(null);
     try {
       const res = await searchLeadsAction(query);
       if (res.success && res.data) {
         setResults(res.data as Lead[]);
       } else {
+        setSearchError(res.error ?? "Unknown error");
         console.error("Search failed:", res.error);
       }
     } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      setSearchError(msg);
       console.error("Failed to run lead search:", error);
     } finally {
       setIsSearching(false);
@@ -68,21 +102,91 @@ export default function LeadFinderPage() {
               exit={{ opacity: 0 }}
             >
               {/* Scanning animation */}
-              <div className="mb-6 flex flex-col items-center justify-center gap-3 rounded-2xl border border-[var(--border)] bg-white py-8">
-                <div className="relative flex h-16 w-16 items-center justify-center">
+              <div className="mb-6 flex flex-col items-center justify-center gap-4 rounded-2xl border border-[var(--border)] bg-white py-10">
+                {/* Animated icon */}
+                <div className="relative flex h-20 w-20 items-center justify-center">
                   <div className="absolute inset-0 rounded-full border-4 border-blue-100" />
-                  <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-blue-500" style={{ animationDuration: "1s" }} />
-                  <Radar className="h-6 w-6 text-blue-600" />
+                  <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-blue-500" style={{ animationDuration: "1.2s" }} />
+                  <div className="absolute inset-2 animate-spin rounded-full border-2 border-transparent border-t-violet-400" style={{ animationDuration: "2s", animationDirection: "reverse" }} />
+                  <MapPin className="h-7 w-7 text-blue-600" />
                 </div>
-                <div className="text-center">
-                  <p className="font-semibold text-[var(--text-primary)]">AI is scanning the web...</p>
-                  <p className="text-sm text-[var(--text-muted)] mt-1">Analyzing thousands of companies to find your ideal leads</p>
+
+                {/* Status text */}
+                <div className="text-center space-y-1">
+                  <p className="font-semibold text-[var(--text-primary)]">
+                    Searching Google Maps via Apify
+                  </p>
+                  <motion.p
+                    key={msgIndex}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-sm text-blue-600 font-medium"
+                  >
+                    {SEARCH_MESSAGES[msgIndex]}
+                  </motion.p>
+                  <p className="text-xs text-[var(--text-muted)] flex items-center justify-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {elapsedSeconds}s elapsed — this can take up to 90 seconds
+                  </p>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-64 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full"
+                    initial={{ width: "5%" }}
+                    animate={{ width: `${Math.min(5 + elapsedSeconds, 90)}%` }}
+                    transition={{ duration: 1, ease: "linear" }}
+                  />
                 </div>
               </div>
+
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <SkeletonLeadCard key={i} />
                 ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Error state */}
+          {!isSearching && hasSearched && searchError && results.length === 0 && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-red-200 bg-red-50 py-12 text-center"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100">
+                <MapPin className="h-7 w-7 text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-red-700">Search failed</p>
+                <p className="text-sm text-red-500 mt-1 max-w-sm">{searchError}</p>
+              </div>
+              <p className="text-xs text-red-400">Check your Apify token in .env or try again.</p>
+            </motion.div>
+          )}
+
+          {/* Zero results state */}
+          {!isSearching && hasSearched && !searchError && results.length === 0 && (
+            <motion.div
+              key="noresults"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-[var(--border)] bg-white py-12 text-center"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+                <MapPin className="h-7 w-7 text-amber-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-[var(--text-primary)]">No leads found</p>
+                <p className="text-sm text-[var(--text-muted)] mt-1 max-w-sm">
+                  Google Maps returned 0 results for this query. Try a broader industry, different city, or fewer keywords.
+                </p>
               </div>
             </motion.div>
           )}
@@ -102,7 +206,10 @@ export default function LeadFinderPage() {
                   <span className="text-sm font-semibold text-[var(--text-primary)]">
                     {results.length} leads found
                   </span>
-                  <span className="text-xs text-[var(--text-muted)]">by AI</span>
+                  <span className="text-xs text-[var(--text-muted)]">via Google Maps</span>
+                  <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                    LIVE
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors">
