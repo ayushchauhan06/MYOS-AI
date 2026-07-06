@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { mockLeads } from "@/lib/mock-data/leads";
 import type { Lead, LeadStage } from "@/lib/types";
 import {
   getLeadsAction,
@@ -61,28 +60,14 @@ export const useLeadStore = create<LeadStore>((set, get) => ({
     try {
       const res = await getLeadsAction();
       if (res.success && res.leads) {
-        if (res.leads.length === 0) {
-          // Empty DB -> Populate with mock data for local testing
-          set({ leads: mockLeads });
-          // Background seeding
-          for (const ml of mockLeads) {
-            await saveLeadAction(ml);
-          }
-          // Fetch again to update state with real DB records
-          const updated = await getLeadsAction();
-          if (updated.success && updated.leads && updated.leads.length > 0) {
-            set({ leads: updated.leads as Lead[] });
-          }
-        } else {
-          set({ leads: res.leads as Lead[] });
-        }
+        set({ leads: res.leads as Lead[] });
       } else {
-        // Fallback on action failure
-        set({ leads: mockLeads });
+        console.error("Failed to fetch leads from DB:", res.error);
+        set({ leads: [] });
       }
     } catch (error) {
-      console.error("Database connection failed, falling back to mock leads:", error);
-      set({ leads: mockLeads });
+      console.error("Database connection failed:", error);
+      set({ leads: [] });
     }
   },
 
