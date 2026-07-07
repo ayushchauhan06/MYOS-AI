@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Sparkles, Download, Share2, Copy, Edit, CheckCircle } from "lucide-react";
+import { Sparkles, Download, Share2, Copy, Edit, CheckCircle, X, Mail, MessageCircle, Check } from "lucide-react";
 import { mockLeads } from "@/lib/mock-data/leads";
 import { mockProposals } from "@/lib/mock-data/proposals";
 import type { ProposalContent } from "@/lib/types";
@@ -26,7 +26,7 @@ const timelines = ["2 weeks", "1 month", "6 weeks", "2 months", "3 months", "4â€
 
 function ProposalPreviewDoc({ content }: { content: ProposalContent }) {
   return (
-    <div className="min-h-full bg-white rounded-2xl border border-[var(--border)] p-10 font-[var(--font-geist-sans)] shadow-[var(--shadow-sm)]">
+    <div id="proposal-print-area" className="min-h-full bg-white rounded-2xl border border-[var(--border)] p-10 font-[var(--font-geist-sans)] shadow-[var(--shadow-sm)]">
       {/* Header */}
       <div className="flex items-start justify-between border-b border-[var(--border)] pb-8 mb-8">
         <div>
@@ -126,14 +126,143 @@ function ProposalPreviewDoc({ content }: { content: ProposalContent }) {
   );
 }
 
+interface ShareModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  proposalTitle: string;
+  leadName: string;
+  leadId: string;
+}
+
+function ShareModal({ isOpen, onClose, proposalTitle, leadName, leadId }: ShareModalProps) {
+  const [isPublic, setIsPublic] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const shareUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/proposals/share/${leadId}`
+    : `https://myos.ai/proposals/share/${leadId}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+      />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative z-10 w-full max-w-md rounded-2xl border border-[var(--border)] bg-white p-6 shadow-2xl space-y-6"
+      >
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <h3 className="font-bold text-sm text-[var(--text-primary)]">Share AI Proposal</h3>
+          <button onClick={onClose} className="rounded-lg p-1 hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl bg-[var(--surface)] p-4 border border-[var(--border)]">
+          <div>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Public Link Sharing</p>
+            <p className="text-xs text-[var(--text-muted)]">Anyone with the link can view this document</p>
+          </div>
+          <button
+            onClick={() => setIsPublic(!isPublic)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none ${
+              isPublic ? "bg-[var(--accent-blue)]" : "bg-gray-200"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                isPublic ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Public Link</label>
+          <div className="flex gap-2">
+            <input
+              readOnly
+              value={isPublic ? shareUrl : "Public sharing is disabled"}
+              className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-secondary)] outline-none"
+            />
+            <button
+              disabled={!isPublic}
+              onClick={handleCopy}
+              className="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 text-xs font-semibold text-white shadow hover:opacity-95 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2 border-t border-[var(--border)] pt-4">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Quick Channels</label>
+          <div className="grid grid-cols-2 gap-3">
+            <a
+              href={`mailto:?subject=${encodeURIComponent(`Proposal: ${proposalTitle}`)}&body=${encodeURIComponent(
+                `Hi ${leadName},\n\nI have generated a customized proposal for our project. You can review the details here:\n${shareUrl}\n\nBest,\nAlex`
+              )}`}
+              className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white py-2.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
+            >
+              <Mail className="h-4 w-4 text-blue-500" />
+              Share via Email
+            </a>
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href={`https://wa.me/?text=${encodeURIComponent(
+                `Hi ${leadName}, here is the customized proposal for our project: ${shareUrl}`
+              )}`}
+              className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white py-2.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
+            >
+              <MessageCircle className="h-4 w-4 text-emerald-500" />
+              Share via WhatsApp
+            </a>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function ProposalsPage() {
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<ProposalContent | null>(mockProposals[0].content);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ProposalForm>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<ProposalForm>({
     resolver: zodResolver(proposalSchema),
     defaultValues: { leadId: "8", projectType: "Web Application", budget: "$5K â€“ $15K", timeline: "2 months" },
   });
+
+  const activeLeadId = watch("leadId");
+  const activeLead = mockLeads.find((l) => l.id === activeLeadId) || mockLeads[0];
 
   function onSubmit(_data: ProposalForm) {
     setGenerating(true);
@@ -217,17 +346,58 @@ export default function ProposalsPage() {
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--border)] bg-white px-6 py-3">
           <p className="text-sm font-semibold text-[var(--text-secondary)]">Preview</p>
           <div className="flex items-center gap-2">
-            {[
-              { label: "Edit", icon: Edit },
-              { label: "Copy Link", icon: Copy },
-              { label: "Share", icon: Share2 },
-              { label: "Export PDF", icon: Download },
-            ].map(({ label, icon: Icon }) => (
-              <button key={label} className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors">
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </button>
-            ))}
+            {/* Edit */}
+            <button
+              onClick={() => {
+                const el = document.getElementsByName("requirements")[0];
+                if (el) el.focus();
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer animate-none"
+            >
+              <Edit className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+              Edit
+            </button>
+
+            {/* Copy Link */}
+            <button
+              onClick={() => {
+                const shareUrl = `${window.location.origin}/proposals/share/${activeLead?.id || "prop"}`;
+                navigator.clipboard.writeText(shareUrl);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
+            >
+              {linkCopied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy Link
+                </>
+              )}
+            </button>
+
+            {/* Share */}
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              Share
+            </button>
+
+            {/* Export PDF */}
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export PDF
+            </button>
           </div>
         </div>
 
@@ -257,6 +427,19 @@ export default function ProposalsPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Share Modal Dialog */}
+      <AnimatePresence>
+        {shareOpen && (
+          <ShareModal
+            isOpen={shareOpen}
+            onClose={() => setShareOpen(false)}
+            proposalTitle={generatedContent?.title || "AI Proposal"}
+            leadName={activeLead ? `${activeLead.contactName} (${activeLead.company})` : "Client"}
+            leadId={activeLead?.id || "1"}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
