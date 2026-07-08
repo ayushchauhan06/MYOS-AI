@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import {
-  Bell, Search, Zap, ChevronDown, Home, LogOut, Settings, User,
+  Bell, Search, Zap, ChevronDown, Home, LogOut, Settings, User, Sun, Moon,
 } from "lucide-react";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { useUIStore } from "@/lib/store/useUIStore";
@@ -69,7 +69,7 @@ function NotificationSection({ title, items, markRead }: NotificationSectionProp
           onClick={() => markRead(n.id)}
           className={cn(
             "flex cursor-pointer gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface)]",
-            !n.read && "bg-blue-50/50"
+            !n.read && "bg-[var(--accent-blue-subtle)]/50"
           )}
         >
           <span className="text-xl flex-shrink-0 mt-0.5">{typeEmoji[n.type]}</span>
@@ -114,7 +114,7 @@ function NotificationPanel() {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="fixed right-4 top-16 z-50 w-[400px] overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-[var(--shadow-lg)]"
+      className="fixed right-4 top-16 z-50 w-[400px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg)] shadow-[var(--shadow-lg)]"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
@@ -158,8 +158,17 @@ export function Header() {
     closeNotificationPanel, 
     unreadCount,
     userPlan,
-    setUpgradeModalOpen
+    setUpgradeModalOpen,
+    theme,
+    toggleTheme
   } = useUIStore();
+
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted on client to prevent hydration mismatch for theme icons
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -177,7 +186,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--border)] bg-white/80 backdrop-blur-xl px-6">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-xl px-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
           {breadcrumb.map((crumb, i) => (
@@ -202,7 +211,7 @@ export function Header() {
           <button className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm text-[var(--text-muted)] transition-all hover:border-[var(--accent-blue)] hover:text-[var(--text-secondary)] w-44 text-left">
             <Search className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="flex-1">Search...</span>
-            <kbd className="rounded border border-[var(--border)] bg-white px-1 py-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+            <kbd className="rounded border border-[var(--border)] bg-[var(--surface)] px-1 py-0.5 text-[10px] font-mono text-[var(--text-muted)]">
               ⌘K
             </kbd>
           </button>
@@ -223,12 +232,25 @@ export function Header() {
             </span>
           )}
 
+          {/* Theme Quick Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-secondary)] transition-all hover:bg-[var(--surface)] hover:text-[var(--text-primary)] cursor-pointer"
+            aria-label="Toggle theme"
+          >
+            {mounted && theme === "dark" ? (
+              <Sun className="h-4 w-4 text-[var(--accent-purple)]" />
+            ) : (
+              <Moon className="h-4 w-4 text-[var(--accent-blue)]" />
+            )}
+          </button>
+
           {/* Notification bell */}
           <div data-notification-panel>
             <button
               id="notification-bell"
               onClick={toggleNotificationPanel}
-              className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-white text-[var(--text-secondary)] transition-all hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+              className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-secondary)] transition-all hover:bg-[var(--surface)] hover:text-[var(--text-primary)] cursor-pointer"
               aria-label="Open notifications"
             >
               <Bell className="h-4 w-4" />
@@ -241,7 +263,7 @@ export function Header() {
           </div>
 
           {/* User avatar */}
-          <button className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-2 py-1.5 transition-all hover:bg-[var(--surface)]">
+          <button className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 transition-all hover:bg-[var(--surface)] cursor-pointer">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-[10px] font-bold text-white">
               AC
             </div>

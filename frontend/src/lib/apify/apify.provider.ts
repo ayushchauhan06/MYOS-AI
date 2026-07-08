@@ -93,7 +93,7 @@ export class ApifyLeadProvider implements LeadProvider {
     }
 
     const leads = this.mapItemsToLeads(items, query, runId);
-    const creditsUsed = succeededRun.usageUsd ? succeededRun.usageUsd * 1000 : count * 0.05;
+    const creditsUsed = succeededRun.usageUsd ? (succeededRun.usageUsd as number) * 1000 : count * 0.05;
 
     console.log(`[Apify] Mapped ${leads.length} leads successfully.`);
     return { leads, creditsUsed };

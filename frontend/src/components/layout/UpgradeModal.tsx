@@ -105,7 +105,7 @@ export function UpgradeModal() {
             id: `upg_${Date.now()}`,
             title: "Upgrade Successful! 🎉",
             description: `You are now subscribed to the ${selectedPlan.name} plan.`,
-            type: "lead_saved", // Maps to Green icon
+            type: "lead_found", // Maps to Green icon
             time: "Just now",
             read: false,
           });

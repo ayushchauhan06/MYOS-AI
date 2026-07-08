@@ -1,11 +1,17 @@
 "use client";
 
-import React from "react";
-import { Zap } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Zap, Sun, Moon, Monitor } from "lucide-react";
 import { useUIStore } from "@/lib/store/useUIStore";
 
 export function SettingsClient() {
-  const { userPlan, setUserPlan, setUpgradeModalOpen } = useUIStore();
+  const { userPlan, setUserPlan, setUpgradeModalOpen, theme, setTheme } = useUIStore();
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted on client to prevent hydration mismatch for theme state
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="p-6 max-w-3xl space-y-8">
@@ -23,7 +29,7 @@ export function SettingsClient() {
             <p className="font-semibold text-[var(--text-primary)]">Alex Chen</p>
             <p className="text-sm text-[var(--text-muted)]">alex@myos.ai</p>
           </div>
-          <button className="ml-auto rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors">
+          <button className="ml-auto rounded-xl border border-[var(--border)] bg-[var(--bg)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer">
             Edit Profile
           </button>
         </div>
@@ -37,6 +43,37 @@ export function SettingsClient() {
             <span className="text-sm font-medium text-[var(--text-primary)]">{value}</span>
           </div>
         ))}
+      </div>
+
+      {/* Theme Settings */}
+      <div className="card p-6 space-y-5">
+        <h3 className="font-semibold text-[var(--text-primary)] border-b border-[var(--border)] pb-3">Appearance</h3>
+        <div className="flex flex-col gap-3">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Theme Mode</label>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { id: "light", label: "Light", icon: Sun },
+              { id: "dark", label: "Dark", icon: Moon },
+              { id: "system", label: "System", icon: Monitor },
+            ].map(({ id, label, icon: Icon }) => {
+              const active = mounted ? theme === id : id === "system";
+              return (
+                <button
+                  key={id}
+                  onClick={() => setTheme(id as "light" | "dark" | "system")}
+                  className={`flex flex-col items-center gap-2.5 rounded-xl border p-4 text-sm font-medium transition-all hover:bg-[var(--surface)] cursor-pointer ${
+                    active
+                      ? "border-[var(--accent-blue)] bg-[var(--accent-blue-subtle)] text-[var(--accent-blue)]"
+                      : "border-[var(--border)] text-[var(--text-secondary)]"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* AI Settings */}
@@ -101,7 +138,7 @@ export function SettingsClient() {
             </div>
             
             <div className="flex gap-3">
-              <button className="flex-1 rounded-xl border border-[var(--border)] bg-white py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer">
+              <button className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg)] py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer">
                 Manage Billing
               </button>
               <button
