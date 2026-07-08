@@ -273,6 +273,168 @@ export default function ProposalsPage() {
     }, 2500);
   }
 
+  const handleExportPDF = () => {
+    if (!generatedContent) return;
+
+    // Create an iframe to print
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "absolute";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(`
+      <html>
+        <head>
+          <title>${generatedContent.title}</title>
+          <style>
+            body {
+              font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              line-height: 1.6;
+              color: #111111;
+              padding: 40px;
+              max-width: 800px;
+              margin: 0 auto;
+              background: white !important;
+            }
+            h1 {
+              font-size: 24px;
+              font-weight: 700;
+              margin-bottom: 8px;
+              color: #0A0A0A;
+              line-height: 1.25;
+            }
+            .meta {
+              font-size: 13px;
+              color: #666666;
+              margin-bottom: 30px;
+              border-bottom: 1px solid #E5E7EB;
+              padding-bottom: 15px;
+            }
+            h2 {
+              font-size: 16px;
+              font-weight: 700;
+              color: #2563EB;
+              margin-top: 25px;
+              margin-bottom: 10px;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              border-bottom: 1px solid #EFF6FF;
+              padding-bottom: 4px;
+            }
+            p {
+              font-size: 14px;
+              margin-bottom: 15px;
+              white-space: pre-line;
+            }
+            ul {
+              margin-bottom: 20px;
+              padding-left: 20px;
+              list-style-type: disc;
+            }
+            li {
+              font-size: 14px;
+              margin-bottom: 6px;
+            }
+            .pricing-container {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 15px;
+              margin-top: 15px;
+              margin-bottom: 25px;
+            }
+            .package-card {
+              border: 1px solid #E5E7EB;
+              border-radius: 8px;
+              padding: 15px;
+              background: #FAFAFA;
+            }
+            .package-name {
+              font-weight: bold;
+              font-size: 14px;
+              color: #0A0A0A;
+            }
+            .package-price {
+              font-size: 20px;
+              font-weight: 700;
+              color: #2563EB;
+              margin: 5px 0 10px 0;
+            }
+            .package-features {
+              padding-left: 15px;
+              list-style-type: none;
+            }
+            .package-features li {
+              font-size: 12px;
+              margin-bottom: 4px;
+              position: relative;
+            }
+            .package-features li::before {
+              content: "✓";
+              position: absolute;
+              left: -12px;
+              color: #10B981;
+            }
+            @media print {
+              body {
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${generatedContent.title}</h1>
+          <div class="meta">
+            Prepared on ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+          </div>
+
+          <h2>1. Introduction</h2>
+          <p>${generatedContent.introduction}</p>
+
+          <h2>2. Problem Analysis</h2>
+          <p>${generatedContent.problemAnalysis}</p>
+
+          <h2>3. Proposed Solution</h2>
+          <p>${generatedContent.proposedSolution}</p>
+
+          <h2>4. Scope of Work</h2>
+          <ul>
+            ${generatedContent.scopeOfWork.map(function(item) { return '<li>' + item + '</li>'; }).join('')}
+          </ul>
+
+          <h2>5. Pricing Packages</h2>
+          <div class="pricing-container">
+            ${generatedContent.pricing.packages.map(function(pkg) {
+              return '<div class="package-card">' +
+                '<div class="package-name">' + pkg.name + '</div>' +
+                '<div class="package-price">$' + pkg.price.toLocaleString() + '</div>' +
+                '<ul class="package-features">' +
+                  pkg.features.map(function(f) { return '<li>' + f + '</li>'; }).join('') +
+                '</ul>' +
+              '</div>';
+            }).join('')}
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.focus();
+              window.print();
+              setTimeout(function() {
+                window.frameElement.remove();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    doc.close();
+  };
+
   return (
     <div className="flex h-full">
       {/* Left: Form */}
@@ -392,7 +554,7 @@ export default function ProposalsPage() {
 
             {/* Export PDF */}
             <button
-              onClick={() => window.print()}
+              onClick={handleExportPDF}
               className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
