@@ -56,7 +56,7 @@ export function Sidebar() {
       variants={sidebarVariants}
       animate={sidebarCollapsed ? "collapsed" : "expanded"}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-[var(--border)] bg-white shadow-[2px_0_12px_rgba(0,0,0,0.04)]"
+      className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-[var(--border)] bg-[var(--bg)] shadow-[2px_0_12px_rgba(0,0,0,0.04)]"
       style={{ overflow: "hidden" }}
     >
       {/* Logo */}
@@ -99,7 +99,7 @@ export function Sidebar() {
                 className={cn(
                   "group relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
                   active
-                    ? "bg-blue-50 text-[var(--accent-blue)]"
+                    ? "bg-[var(--accent-blue-subtle)] text-[var(--accent-blue)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
                 )}
                 onClick={isAssistant ? toggleAIAssistant : undefined}

@@ -126,7 +126,7 @@ export function AIAssistant() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="fixed bottom-24 right-6 z-50 flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white"
+            className="fixed bottom-24 right-6 z-50 flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg)]"
             style={{ width: 380, height: 520, boxShadow: "var(--shadow-lg)" }}
           >
             {/* Panel header */}
@@ -202,7 +202,7 @@ export function AIAssistant() {
                   <button
                     key={label}
                     onClick={() => sendMessage(prompt)}
-                    className="flex flex-shrink-0 items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-all hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] hover:bg-blue-50"
+                    className="flex flex-shrink-0 items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-all hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)] hover:bg-[var(--accent-blue-subtle)]"
                   >
                     <Icon className="h-3 w-3" />
                     {label}
@@ -213,7 +213,7 @@ export function AIAssistant() {
 
             {/* Input bar */}
             <div className="border-t border-[var(--border)] p-3">
-              <div className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 focus-within:border-[var(--accent-blue)] focus-within:bg-white transition-all">
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 focus-within:border-[var(--accent-blue)] focus-within:bg-[var(--bg)] transition-all">
                 <input
                   type="text"
                   value={input}

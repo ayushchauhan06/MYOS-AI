@@ -36,6 +36,11 @@ interface UIStore {
   setUserPlan: (plan: "FREE" | "STARTER" | "PRO" | "AGENCY") => void;
   upgradeModalOpen: boolean;
   setUpgradeModalOpen: (open: boolean) => void;
+
+  // Theme
+  theme: "light" | "dark" | "system";
+  setTheme: (theme: "light" | "dark" | "system") => void;
+  toggleTheme: () => void;
 }
 
 // Helper to get initial plan safely on client/server
@@ -47,6 +52,17 @@ const getInitialPlan = (): "FREE" | "STARTER" | "PRO" | "AGENCY" => {
     }
   }
   return "FREE";
+};
+
+// Helper to get initial theme safely on client/server
+const getInitialTheme = (): "light" | "dark" | "system" => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("myos_theme");
+    if (saved === "light" || saved === "dark" || saved === "system") {
+      return saved;
+    }
+  }
+  return "system";
 };
 
 export const useUIStore = create<UIStore>((set, get) => ({
@@ -100,4 +116,26 @@ export const useUIStore = create<UIStore>((set, get) => ({
   },
   upgradeModalOpen: false,
   setUpgradeModalOpen: (upgradeModalOpen) => set({ upgradeModalOpen }),
+
+  theme: getInitialTheme(),
+  setTheme: (theme) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("myos_theme", theme);
+    }
+    set({ theme });
+  },
+  toggleTheme: () => {
+    const currentTheme = get().theme;
+    let nextTheme: "light" | "dark" | "system" = "light";
+    if (currentTheme === "system") {
+      const isSystemDark = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      nextTheme = isSystemDark ? "light" : "dark";
+    } else {
+      nextTheme = currentTheme === "dark" ? "light" : "dark";
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("myos_theme", nextTheme);
+    }
+    set({ theme: nextTheme });
+  },
 }));
