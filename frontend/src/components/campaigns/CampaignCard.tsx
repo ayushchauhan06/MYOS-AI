@@ -1,15 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Play, Pause, Trash2, MoreHorizontal, Mail, MessageCircle, Zap } from "lucide-react";
+import { Play, Pause, Trash2, Edit2, Mail, MessageCircle, Zap } from "lucide-react";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { useCampaignStore } from "@/lib/store/useCampaignStore";
 import { cardVariants } from "@/lib/utils";
-import type { Campaign } from "@/lib/types";
+import type { Campaign, CampaignStatus } from "@/lib/types";
 
 interface CampaignCardProps {
   campaign: Campaign;
   delay?: number;
+  onToggleStatus?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onEdit?: (campaign: Campaign) => void;
 }
 
 const statusConfig = {
@@ -26,7 +29,7 @@ const typeConfig = {
   COMBINED: { icon: Zap, color: "text-violet-600", bg: "bg-violet-50" },
 };
 
-export function CampaignCard({ campaign, delay = 0 }: CampaignCardProps) {
+export function CampaignCard({ campaign, delay = 0, onToggleStatus, onDelete, onEdit }: CampaignCardProps) {
   const { updateCampaignStatus, deleteCampaign } = useCampaignStore();
   const status = statusConfig[campaign.status];
   const type = typeConfig[campaign.type];
@@ -108,27 +111,34 @@ export function CampaignCard({ campaign, delay = 0 }: CampaignCardProps) {
         <div className="flex items-center gap-1">
           {campaign.status === "ACTIVE" ? (
             <button
-              onClick={() => updateCampaignStatus(campaign.id, "PAUSED")}
+              onClick={() => onToggleStatus ? onToggleStatus(campaign.id) : updateCampaignStatus(campaign.id, "PAUSED")}
               className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-amber-50 text-[var(--text-muted)] hover:text-amber-600 transition-colors"
+              title="Pause Campaign"
             >
               <Pause className="h-3.5 w-3.5" />
             </button>
           ) : campaign.status === "PAUSED" || campaign.status === "DRAFT" ? (
             <button
-              onClick={() => updateCampaignStatus(campaign.id, "ACTIVE")}
+              onClick={() => onToggleStatus ? onToggleStatus(campaign.id) : updateCampaignStatus(campaign.id, "ACTIVE")}
               className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-emerald-50 text-[var(--text-muted)] hover:text-emerald-600 transition-colors"
+              title="Activate Campaign"
             >
               <Play className="h-3.5 w-3.5" />
             </button>
           ) : null}
           <button
-            onClick={() => deleteCampaign(campaign.id)}
+            onClick={() => onEdit && onEdit(campaign)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-blue-50 text-[var(--text-muted)] hover:text-blue-500 transition-colors"
+            title="Edit Campaign"
+          >
+            <Edit2 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => onDelete ? onDelete(campaign.id) : deleteCampaign(campaign.id)}
             className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-red-50 text-[var(--text-muted)] hover:text-red-500 transition-colors"
+            title="Delete Campaign"
           >
             <Trash2 className="h-3.5 w-3.5" />
-          </button>
-          <button className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
-            <MoreHorizontal className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
